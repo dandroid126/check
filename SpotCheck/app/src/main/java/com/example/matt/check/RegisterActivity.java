@@ -50,9 +50,6 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
      */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -61,6 +58,9 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
     // UI references.
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
+    private EditText mConfirmPasswordView;
+    private EditText mFirstNameView;
+    private EditText mLastNameView;
     private View mProgressView;
     private View mLoginFormView;
 
@@ -71,10 +71,13 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         setupActionBar();
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
+        mFirstNameView = (EditText) findViewById(R.id.first_name);
+        mLastNameView = (EditText) findViewById(R.id.last_name);
         populateAutoComplete();
 
         mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        mConfirmPasswordView = (EditText) findViewById(R.id.confirm_password);
+        mConfirmPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
                 if (id == R.id.login || id == EditorInfo.IME_NULL) {
@@ -95,14 +98,12 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
-        EditText mEmailEditText = (EditText) findViewById(R.id.email);
-        EditText mPasswordEditText = (EditText) findViewById(R.id.password);
         Intent intent = getIntent();
         String[] emailPassword = intent.getStringExtra(LoginActivity.EMAIL_PASSWORD_MESSAGE).split(":");
         try
         {
-            mEmailEditText.setText(emailPassword[0]);
-            mPasswordEditText.setText(emailPassword[1]);
+            mEmailView.setText(emailPassword[0]);
+            mPasswordView.setText(emailPassword[1]);
         }
         catch(ArrayIndexOutOfBoundsException e) {/*do nothing*/}
     }
@@ -174,18 +175,50 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
         // Reset errors.
         mEmailView.setError(null);
         mPasswordView.setError(null);
+        mConfirmPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
         String email = mEmailView.getText().toString();
         String password = mPasswordView.getText().toString();
+        String confirmPassword = mConfirmPasswordView.getText().toString();
+        String firstName = mFirstNameView.getText().toString();
+        String lastName = mLastNameView.getText().toString();
 
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+
+        //Check for valid last name
+        if(TextUtils.isEmpty(lastName))
+        {
+            mLastNameView.setError(getString(R.string.error_field_required));
+            focusView = mLastNameView;
+            cancel = true;
+        }
+
+        // Check for a valid password.
+        if(TextUtils.isEmpty(password))
+        {
+            mPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mPasswordView;
+            cancel = true;
+        }
+        else if (!isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
+            cancel = true;
+        }
+        if(TextUtils.isEmpty(confirmPassword))
+        {
+            mConfirmPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mConfirmPasswordView;
+            cancel = true;
+        }
+        //check if passwords match
+        if(!password.equals(confirmPassword))
+        {
+            mConfirmPasswordView.setError("Passwords don't match.");
+            focusView = mConfirmPasswordView;
             cancel = true;
         }
 
@@ -200,6 +233,14 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             cancel = true;
         }
 
+        //Check for valid first name
+        if(TextUtils.isEmpty(firstName))
+        {
+            mFirstNameView.setError(getString(R.string.error_field_required));
+            focusView = mFirstNameView;
+            cancel = true;
+        }
+
         if (cancel) {
             // There was an error; don't attempt login and focus the first
             // form field with an error.
@@ -208,19 +249,17 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             // Show a progress spinner, and kick off a background task to
             // perform the user login attempt.
             showProgress(true);
-            mAuthTask = new UserLoginTask(email, password);
+            mAuthTask = new UserLoginTask(email, password, confirmPassword, firstName, lastName);
             mAuthTask.execute((Void) null);
         }
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
         String emailPattern = getResources().getString(R.string.emailPattern);
         return Pattern.matches(emailPattern, email);
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() >= 6;
     }
 
@@ -322,10 +361,16 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
         private final String mEmail;
         private final String mPassword;
+        private final String mConfirmPassword;
+        private final String mFirstName;
+        private final String mLastName;
 
-        UserLoginTask(String email, String password) {
+        UserLoginTask(String email, String password, String confirmPassword, String firstName, String lastName) {
             mEmail = email;
             mPassword = password;
+            mConfirmPassword = confirmPassword;
+            mFirstName = firstName;
+            mLastName = lastName;
         }
 
         @Override
@@ -339,7 +384,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 return false;
             }
 
-            for (String credential : DUMMY_CREDENTIALS) {
+            for (String credential : LoginActivity.DUMMY_CREDENTIALS) {
                 String[] pieces = credential.split(":");
                 if (pieces[0].equalsIgnoreCase(mEmail)) {
                     // Account exists. Cannot register
@@ -347,7 +392,8 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
                 }
             }
 
-            // TODO: register the new account here.
+            // TODO: change this to push to server
+            LoginActivity.DUMMY_CREDENTIALS.add(mEmail + ":" + mPassword + ":" + mFirstName + ":" + mLastName);
             return true;
         }
 
@@ -356,9 +402,10 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             mAuthTask = null;
             showProgress(false);
 
-            if (success) {
+            if (success)
                 finish();
-            } else {
+            else
+            {
                 mEmailView.setError("You already have a SpotCheck account!");
                 mEmailView.requestFocus();
             }

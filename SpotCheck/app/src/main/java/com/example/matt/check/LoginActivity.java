@@ -49,7 +49,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * A dummy authentication store containing known user names and passwords.
      * TODO: remove after connecting to a real authentication system.
      */
-    private static final ArrayList<String> DUMMY_CREDENTIALS = new ArrayList<String>();
+    public static final ArrayList<String> DUMMY_CREDENTIALS = new ArrayList<String>();
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
@@ -69,8 +69,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         // Set up the login form.
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
-        DUMMY_CREDENTIALS.add("foo@example.com:hello123");
-        DUMMY_CREDENTIALS.add("bar@example.com:world123");
+        DUMMY_CREDENTIALS.add("foo@example.com:hello123:first:last");
+        DUMMY_CREDENTIALS.add("bar@example.com:world123:first:last");
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -170,8 +170,14 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         boolean cancel = false;
         View focusView = null;
 
-        // Check for a valid password, if the user entered one.
-        if (!TextUtils.isEmpty(password) && !isPasswordValid(password)) {
+        // Check for a valid password.
+        if(TextUtils.isEmpty(password))
+        {
+            mPasswordView.setError(getString(R.string.error_field_required));
+            focusView = mPasswordView;
+            cancel = true;
+        }
+        else if (/*! && */!isPasswordValid(password)) {
             mPasswordView.setError(getString(R.string.error_invalid_password));
             focusView = mPasswordView;
             cancel = true;
@@ -202,13 +208,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     }
 
     private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
         String emailPattern = getResources().getString(R.string.emailPattern);
         return Pattern.matches(emailPattern, email);
     }
 
     private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
         return password.length() >= 6;
     }
 
