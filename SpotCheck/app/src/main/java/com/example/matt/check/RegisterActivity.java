@@ -104,10 +104,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
             mEmailEditText.setText(emailPassword[0]);
             mPasswordEditText.setText(emailPassword[1]);
         }
-        catch(ArrayIndexOutOfBoundsException e)
-        {
-
-        }
+        catch(ArrayIndexOutOfBoundsException e) {/*do nothing*/}
     }
 
     private void populateAutoComplete() {
@@ -224,7 +221,7 @@ public class RegisterActivity extends AppCompatActivity implements LoaderCallbac
 
     private boolean isPasswordValid(String password) {
         //TODO: Replace this with your own logic
-        return password.length() > 6;
+        return password.length() >= 6;
     }
 
     /**
